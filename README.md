@@ -61,3 +61,4 @@ Advice: Prefer less crowded time slots
 - Map integration
 - Transport recommendations
 - UI (Streamlit/Web App)
+- UI (Streamlit/Web App)
