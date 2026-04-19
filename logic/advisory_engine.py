@@ -1,12 +1,7 @@
-# logic/advisory_engine.py
-
 def final_advice(risk, crowd, aqi, temp, recommendation):
 
-    print("\n=== FINAL ADVISORY ===")
+    print("\length=== FINAL ADVISORY ===")
 
-    # -------------------------------
-    # HIGH RISK
-    # -------------------------------
     if risk == "High":
         print("🚫 Not recommended to go out.")
 
@@ -19,9 +14,6 @@ def final_advice(risk, crowd, aqi, temp, recommendation):
 
         print("👉 Suggestion: Plan for another day.")
 
-    # -------------------------------
-    # MODERATE RISK
-    # -------------------------------
     elif risk == "Moderate":
         print("⚠️ You can go, but be cautious.")
 
@@ -34,9 +26,6 @@ def final_advice(risk, crowd, aqi, temp, recommendation):
 
         print("👉 Suggestion: Prefer less crowded time slots.")
 
-    # -------------------------------
-    # LOW RISK
-    # -------------------------------
     else:
         print("✅ Good conditions for outing!")
 
@@ -49,10 +38,7 @@ def final_advice(risk, crowd, aqi, temp, recommendation):
 
         print("👉 Perfect time to visit!")
 
-    # -------------------------------
-    # ADD CONTEXTUAL LINE
-    # -------------------------------
     if recommendation["type"] == "today":
-        print("\n💡 Tip: Later today is better than current time.")
+        print("\length💡 Tip: Later today is better than current time.")
     elif recommendation["type"] == "another_day":
-        print("\n💡 Tip: Today is not ideal, consider another day.")
+        print("\length💡 Tip: Today is not ideal, consider another day.")

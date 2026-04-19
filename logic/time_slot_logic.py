@@ -2,7 +2,6 @@ from datetime import datetime
 from logic.feature_builder import build_features
 from logic.crowd_predictor import predict_crowd
 
-# Time slots (24-hour format)
 TIME_SLOTS = [
     (11, 13),
     (13, 16),
@@ -16,22 +15,18 @@ def get_current_slot(hour):
             return (start, end)
     return None
 
-
 def recommend_time(place, temp):
 
     now = datetime.now()
     current_hour = now.hour
 
-    # -------------------------------
-    # 1. CHECK CURRENT SLOT
-    # -------------------------------
     current_slot = get_current_slot(current_hour)
 
     if current_slot:
         start, end = current_slot
 
         features = build_features(place, temp)
-        features[0] = start  # override hour
+        features[0] = start
 
         crowd = predict_crowd(features)
 
@@ -42,15 +37,12 @@ def recommend_time(place, temp):
                 "crowd": crowd
             }
 
-    # -------------------------------
-    # 2. CHECK FUTURE SLOTS
-    # -------------------------------
     best_slot = None
 
     for start, end in TIME_SLOTS:
 
         if end <= current_hour:
-            continue  # skip past slots
+            continue
 
         features = build_features(place, temp)
         features[0] = start
@@ -68,9 +60,6 @@ def recommend_time(place, temp):
     if best_slot:
         return best_slot
 
-    # -------------------------------
-    # 3. NO SLOT TODAY → NEXT DAY
-    # -------------------------------
     return {
         "type": "another_day",
         "message": "No good time today. Try tomorrow."
