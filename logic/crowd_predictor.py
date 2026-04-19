@@ -3,7 +3,6 @@ import pandas as pd
 
 model = joblib.load("models/crowd_model.pkl")
 
-# SAME ORDER as training dataset
 columns = [
     "hour", "day", "place_type", "popularity",
     "area_type", "peak_hour", "weekend", "temp_level"

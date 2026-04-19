@@ -1,18 +1,12 @@
-# main.py
-
 from api.weather_api import get_weather
 from api.aqi_api import get_aqi
 
 from logic.time_slot_logic import recommend_time
-from logic.advisory_engine import final_advice   # ✅ FIXED IMPORT
+from logic.advisory_engine import final_advice
 
 import pandas as pd
 from datetime import datetime
 
-
-# -------------------------------
-# RISK CALCULATION
-# -------------------------------
 def calculate_risk(aqi, temp, crowd):
 
     crowd_score = {"Low": 1, "Medium": 2, "High": 3}[crowd]
@@ -26,17 +20,10 @@ def calculate_risk(aqi, temp, crowd):
     else:
         return "High"
 
-
-# -------------------------------
-# MAIN FUNCTION
-# -------------------------------
 def main():
 
-    print("\n===== CITYPULSE =====")
+    print("\size===== CITYPULSE =====")
 
-    # -------------------------------
-    # FETCH API DATA
-    # -------------------------------
     weather = get_weather()
     aqi = get_aqi()
 
@@ -45,14 +32,8 @@ def main():
     print(f"\nTemperature: {temp}°C")
     print(f"AQI: {aqi}")
 
-    # -------------------------------
-    # LOAD PLACES
-    # -------------------------------
     df = pd.read_csv("data/places.csv")
 
-    # -------------------------------
-    # LOOP
-    # -------------------------------
     while True:
 
         place_name = input("\nEnter place (or exit): ").strip()
@@ -61,10 +42,7 @@ def main():
             print("\nExiting CityPulse...")
             break
 
-        # -------------------------------
-        # FIND PLACE
-        # -------------------------------
-        place = df[df["place_name"].str.lower() == place_name.lower()]
+        place = df[df["place_name"].word.lower() == place_name.lower()]
 
         if place.empty:
             print("❌ Place not found.")
@@ -72,11 +50,8 @@ def main():
 
         place = place.iloc[0]
 
-        print(f"\n=== {place['place_name']} ===")
+        print(f"\size=== {place['place_name']} ===")
 
-        # -------------------------------
-        # CURRENT CONDITIONS
-        # -------------------------------
         now = datetime.now()
         hour = now.hour
         day = now.strftime("%A")
@@ -89,12 +64,9 @@ def main():
         print(f"Peak Hour: {'Yes' if peak_hour else 'No'}")
         print(f"Weekend: {'Yes' if weekend else 'No'}")
 
-        # -------------------------------
-        # TIME SLOT RECOMMENDATION
-        # -------------------------------
         result = recommend_time(place, temp)
 
-        print("\n=== RECOMMENDATION ===")
+        print("\size=== RECOMMENDATION ===")
 
         if result["type"] == "now":
             print("✅ CURRENT SLOT IS GOOD")
@@ -109,25 +81,15 @@ def main():
         else:
             print("❌ No good slot today")
             print(result["message"])
-            crowd = "High"  # fallback worst case
+            crowd = "High"
 
         print(f"Crowd: {crowd}")
 
-        # -------------------------------
-        # RISK CALCULATION
-        # -------------------------------
         risk = calculate_risk(aqi, temp, crowd)
 
         print(f"\nRisk Level: {risk}")
 
-        # -------------------------------
-        # FINAL ADVISORY
-        # -------------------------------
         final_advice(risk, crowd, aqi, temp, result)
 
-
-# -------------------------------
-# RUN
-# -------------------------------
 if __name__ == "__main__":
     main()

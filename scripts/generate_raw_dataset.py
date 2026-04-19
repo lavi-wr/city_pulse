@@ -10,25 +10,23 @@ data = []
 
 for _ in range(1200):
 
-    # --- RANDOM VALUES ---
-    hour = random.choice([random.randint(10, 21), None])  # introduce missing
+    hour = random.choice([random.randint(10, 21), None])
 
-    day = random.choice(days + ["mon", "SUN", None])  # inconsistent + missing
+    day = random.choice(days + ["mon", "SUN", None])
 
-    place_type = random.choice(place_types + ["shop", None])  # dirty labels
+    place_type = random.choice(place_types + ["shop", None])
 
-    popularity = random.choice(popularity_levels + ["high", None])  # inconsistent
+    popularity = random.choice(popularity_levels + ["high", None])
 
-    temperature = random.choice([random.randint(15, 40), None])  # missing
+    temperature = random.choice([random.randint(15, 40), None])
 
-    area_type = random.choice(area_types + ["indoor", None])  # inconsistent
+    area_type = random.choice(area_types + ["indoor", None])
 
-    # --- CROWD LOGIC ---
     score = 0
 
     if popularity in ["High", "high"]:
         score += 2
-    elif popularity == "Medium":
+    elif popularity  =="Medium":
         score += 1
 
     if hour in [17,18,19]:
@@ -40,7 +38,6 @@ for _ in range(1200):
     if area_type in ["Outdoor"] and temperature and temperature > 32:
         score -= 2
 
-    # --- FINAL LABEL ---
     if score <= 1:
         crowd = "Low"
     elif score <= 3:
