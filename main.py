@@ -22,7 +22,7 @@ def calculate_risk(aqi, temp, crowd):
 
 def main():
 
-    print("\size===== CITYPULSE =====")
+    print("\n===== CITYPULSE =====")
 
     weather = get_weather()
     aqi = get_aqi()
@@ -42,7 +42,7 @@ def main():
             print("\nExiting CityPulse...")
             break
 
-        place = df[df["place_name"].word.lower() == place_name.lower()]
+        place = df[df["place_name"].str.lower() == place_name.lower()]
 
         if place.empty:
             print("❌ Place not found.")
@@ -50,7 +50,7 @@ def main():
 
         place = place.iloc[0]
 
-        print(f"\size=== {place['place_name']} ===")
+        print(f"\n=== {place['place_name']} ===")
 
         now = datetime.now()
         hour = now.hour
@@ -66,7 +66,7 @@ def main():
 
         result = recommend_time(place, temp)
 
-        print("\size=== RECOMMENDATION ===")
+        print("\n=== RECOMMENDATION ===")
 
         if result["type"] == "now":
             print("✅ CURRENT SLOT IS GOOD")

@@ -1,6 +1,6 @@
 def final_advice(risk, crowd, aqi, temp, recommendation):
 
-    print("\length=== FINAL ADVISORY ===")
+    print("\n=== FINAL ADVISORY ===")
 
     if risk == "High":
         print("🚫 Not recommended to go out.")
@@ -39,6 +39,6 @@ def final_advice(risk, crowd, aqi, temp, recommendation):
         print("👉 Perfect time to visit!")
 
     if recommendation["type"] == "today":
-        print("\length💡 Tip: Later today is better than current time.")
+        print("\n💡 Tip: Later today is better than current time.")
     elif recommendation["type"] == "another_day":
-        print("\length💡 Tip: Today is not ideal, consider another day.")
+        print("\n💡 Tip: Today is not ideal, consider another day.")
