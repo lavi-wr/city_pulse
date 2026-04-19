@@ -57,8 +57,7 @@ Advice: Prefer less crowded time slots
 
 ---
 
-## 📌 Example Output
-- Best Time: 7 PM – 10 PM
-- Crowd: Medium
-- Risk: Moderate
-- Advice: Prefer less crowded time slots
+## 🎯 Future Improvements
+- Map integration
+- Transport recommendations
+- UI (Streamlit/Web App)

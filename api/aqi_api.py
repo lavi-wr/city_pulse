@@ -1,8 +1,10 @@
-# api/aqi_api.py
-
 import requests
+import os
+from dotenv import load_dotenv
 
-API_KEY = "demo"   # works without signup
+load_dotenv()
+
+API_KEY = os.getenv("AQI_API_KEY")
 
 def get_aqi(city="delhi"):
 

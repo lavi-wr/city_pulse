@@ -1,8 +1,10 @@
-# api/weather_api.py
-
 import requests
+import os
+from dotenv import load_dotenv
 
-API_KEY = "7c0c4aa0ea7629c5febfad27d88c0af8"   # 🔴 replace this
+load_dotenv()
+
+API_KEY = os.getenv("WEATHER_API_KEY")
 
 def get_weather(city="Delhi"):
 
@@ -12,24 +14,12 @@ def get_weather(city="Delhi"):
         response = requests.get(url)
         data = response.json()
 
-        # DEBUG (remove later if you want)
-        # print(data)
-
         if "main" not in data:
             print("Weather API Error:", data)
-            return {
-                "temperature": 30,   # fallback
-                "description": "default"
-            }
+            return {"temperature": 30}
 
-        return {
-            "temperature": data["main"]["temp"],
-            "description": data["weather"][0]["description"]
-        }
+        return {"temperature": data["main"]["temp"]}
 
     except Exception as e:
         print("Weather API Exception:", e)
-        return {
-            "temperature": 30,
-            "description": "default"
-        }
+        return {"temperature": 30}
