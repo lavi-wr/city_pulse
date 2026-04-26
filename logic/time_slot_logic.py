@@ -1,6 +1,6 @@
 from datetime import datetime
-from logic.feature_builder import build_features
-from logic.crowd_predictor import predict_crowd
+from feature_builder import build_features
+from crowd_predictor import predict_crowd
 
 TIME_SLOTS = [
     (11, 13),
