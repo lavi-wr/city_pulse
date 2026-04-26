@@ -13,10 +13,10 @@ os.chdir(ROOT)
 sys.path.insert(0, os.path.join(ROOT, "api"))
 sys.path.insert(0, os.path.join(ROOT, "logic"))
 
-from weather_api import get_weather
-from aqi_api import get_aqi
-from time_slot_logic import recommend_time
-from advisory_engine import final_advice
+from api.weather_api import get_weather
+from api.aqi_api import get_aqi
+from logic.time_slot_logic import recommend_time
+from logic.advisory_engine import final_advice
 
 import pandas as pd
 from datetime import datetime
