@@ -210,3 +210,14 @@ for code, cnt in df["crowd"].value_counts().sort_index().items():
 print(f"\n  Sample (first 5 rows):")
 print(df.head().to_string(index=False))
 print(f"\n✅ Cleaning complete!")
+
+import joblib
+import os
+
+os.makedirs("models", exist_ok=True)
+
+joblib.dump(day_map, "models/day_map.pkl")
+joblib.dump(place_map, "models/place_map.pkl")
+joblib.dump(pop_map, "models/pop_map.pkl")
+joblib.dump(area_map, "models/area_map.pkl")
+joblib.dump(crowd_map, "models/crowd_map.pkl")

@@ -20,4 +20,7 @@ def predict_crowd(features):
         2: "High"
     }
 
+    print("FEATURE VECTOR: ",features)
+    print("INPUT:", df.values)
+    print("PRED:", prediction)
     return mapping[prediction]

@@ -1,23 +1,21 @@
 from datetime import datetime
+import joblib
+
+day_map   = joblib.load("models/day_map.pkl")    
+place_map = joblib.load("models/place_map.pkl")
+pop_map   = joblib.load("models/pop_map.pkl")
+area_map  = joblib.load("models/area_map.pkl")
 
 def build_features(place, temp):
 
     hour = datetime.now().hour
     day_str = datetime.now().strftime("%A")
 
-    day_map = {
-        "Monday":0, "Tuesday":1, "Wednesday":2,
-        "Thursday":3, "Friday":4, "Saturday":5, "Sunday":6
-    }
 
-    place_map = {"Shopping":0, "Tourist":1, "Hybrid":2}
-    pop_map = {"Low":1, "Medium":2, "High":3}
-    area_map = {"Indoor":0, "Outdoor":1}
-
-    day = day_map[day_str]
-    place_type = place_map[place["category"]]
-    popularity = pop_map[place["popularity"]]
-    area_type = area_map[place["area_type"]]
+    day = day_map.get(day_str, 0)
+    place_type = place_map.get(place["category"], 0)
+    popularity = pop_map.get(place["popularity"], 2)    
+    area_type = area_map.get(place["area_type"], 0)
 
     peak_hour = 1 if hour in [17,18,19] else 0
     weekend = 1 if day_str in ["Saturday", "Sunday"] else 0

@@ -52,8 +52,8 @@ print(f"  Test samples     : {len(X_test):,}")
 
 
 # ── Train ─────────────────────────────────────────────────
-_header("Training Decision Tree (max_depth=5)")
-model = DecisionTreeClassifier(max_depth=5, random_state=42)
+_header("Training Decision Tree (max_depth=8)")
+model = DecisionTreeClassifier(max_depth=8, class_weight="balanced")
 model.fit(X_train, y_train)
 print("  ✅ Training complete")
 

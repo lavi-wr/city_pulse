@@ -39,32 +39,63 @@ MONTHLY_TEMPS   = {
 }
 
 # Realistic crowd weights by (hour, day_type, place_type)
-def base_crowd_score(hour, day, place_type, popularity, temp):
+def base_crowd_score(hour, day, place_type, popularity, temp,area_type):
     """Returns a 0-10 crowd score based on real-world heuristics."""
     score = 0.0
 
     # Popularity baseline
-    score += {"Low": 1.0, "Medium": 2.5, "High": 4.0}[popularity]
+    score += {"Low": 1.0, "Medium": 2.5, "High": 3.5}[popularity]
 
     # Hour-of-day effect (bimodal: lunch + evening peaks)
-    if   12 <= hour <= 14: score += 2.0      # lunch rush
-    elif 17 <= hour <= 21: score += 3.5      # evening peak
+    if hour<=11:
+        score-=2.0
+    elif   12 <= hour <= 14: score += 2.0      # lunch rush
+    elif 17 <= hour <= 21: score += 2.2      # evening peak
     elif 10 <= hour <= 11: score += 1.0      # morning opener
-    elif hour >= 22:       score -= 1.0      # winding down
+    elif hour >= 22:       score -= 3.0      # winding down
+    elif hour >=21:        score -= 1.5      # late night drop
 
     # Weekday / weekend effect
     if day in ["Saturday", "Sunday"]:
-        score += 2.5
+        score += 1.5
     elif day == "Friday":
         score += 1.0
 
     # Place-type interaction
-    if place_type == "Shopping" and day in ["Saturday", "Sunday"]:
-        score += 1.5
-    if place_type == "Tourist" and day in ["Saturday", "Sunday"]:
+    if place_type == "Shopping":
         score += 2.0
+        if day in ["Saturday", "Sunday"]:
+           score += 1.5
+
+    if place_type == "Tourist":
+       score += 1.5
+       if day in ["Saturday", "Sunday"]:
+           score += 2.5
+
     if place_type == "Hybrid":
-        score += 0.5
+       score += 1.0  
+
+    if place_type == "Tourist" and random.random()<0.3:
+        score-=2.0
+    
+    if place_type == "Shopping" and popularity == "Low":
+        score-=2.0
+    # Area effect (important for realism)
+    if area_type == "Outdoor":
+        if temp > 34:
+            score -= 2.0   # heat reduces outdoor visits
+        elif 22 <= temp <= 30:
+            score += 1.0   # pleasant weather boosts outdoor
+
+    if area_type == "Indoor":
+        if temp > 34:
+            score += 1.5   # malls benefit in heat
+
+    if area_type == "Indoor" and hour >= 22:
+        score-=3.5  # late night indoor venues close early
+
+    if area_type == "Outdoor" and hour >= 22:
+        score-=2.5  # outdoor venues close early, more so than indoor
 
     # Temperature impact (extreme heat/cold reduces outdoor visits)
     if temp > 38:
@@ -74,12 +105,15 @@ def base_crowd_score(hour, day, place_type, popularity, temp):
     elif 22 <= temp <= 30:
         score += 0.5          # comfortable weather → more visitors
 
+    if day in ["Saturday", "Sunday"] and random.random()<0.25:
+        score-=2.5
+
     return score
 
 
 def score_to_crowd(score):
-    if score <= 3.5:  return "Low"
-    if score <= 6.5:  return "Medium"
+    if score <= 4.5:  return "Low"
+    if score <= 7.5:  return "Medium"
     return "High"
 
 
@@ -104,7 +138,7 @@ for _ in range(N_SAMPLES):
 
     day_true    = random.choices(
         DAYS,
-        weights=[10, 10, 10, 10, 12, 20, 18],   # Weekends more likely
+        weights=[10, 10, 10, 10, 12, 16, 14],   # Weekends more likely
         k=1
     )[0]
 
@@ -128,10 +162,10 @@ for _ in range(N_SAMPLES):
     )
 
     score = base_crowd_score(
-        hour_true, day_true, place_type_true, popularity_true, temp_true
+        hour_true, day_true, place_type_true, popularity_true, temp_true, area_type_true
     )
     # Add Gaussian noise
-    score += np.random.normal(0, 0.8)
+    score += np.random.normal(0, 1.2)
     crowd_true = score_to_crowd(score)
 
     # ── Inject messiness ──────────────────────────────────────────────────────

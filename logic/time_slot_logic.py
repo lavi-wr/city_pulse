@@ -3,6 +3,7 @@ from feature_builder import build_features
 from crowd_predictor import predict_crowd
 
 TIME_SLOTS = [
+    (8,11),
     (11, 13),
     (13, 16),
     (16, 19),
@@ -27,6 +28,7 @@ def recommend_time(place, temp):
 
         features = build_features(place, temp)
         features[0] = start
+        features[5] = 1 if start in [17,18,19] else 0
 
         crowd = predict_crowd(features)
 
@@ -38,16 +40,27 @@ def recommend_time(place, temp):
             }
 
     best_slot = None
+    best_score = 10.0
+    crowd_prirority = {"Low": 1, "Medium": 2, "High": 3}    
 
     for start, end in TIME_SLOTS:
-
-        if end <= current_hour:
+        if start<=current_hour:
             continue
-
         features = build_features(place, temp)
+        features[1] = (features[1]+1)%7
         features[0] = start
+        features[5] = 1 if start in [17,18,19] else 0
 
         crowd = predict_crowd(features)
+        score = crowd_prirority[crowd]
+
+        if score < best_score:
+            best_score = score
+            best_slot = {
+                "type": "today",
+                "slot": f"{start}:00 - {end}:00",
+                "crowd": crowd
+            }
 
         if crowd in ["Low", "Medium"]:
             best_slot = {
@@ -62,5 +75,5 @@ def recommend_time(place, temp):
 
     return {
         "type": "another_day",
-        "message": "No good time today. Try tomorrow."
+        "message": "No good time today. Try tomorrow morning."
     }
