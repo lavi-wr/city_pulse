@@ -1,26 +1,26 @@
-place_name,category,popularity,area_type
-Connaught Place,Shopping,High,Outdoor
-Select Citywalk,Shopping,High,Indoor
-DLF Mall of India,Shopping,High,Indoor
-Sarojini Nagar Market,Shopping,High,Outdoor
-Lajpat Nagar Market,Shopping,Medium,Outdoor
-Janpath Market,Shopping,Medium,Outdoor
-Karol Bagh Market,Shopping,High,Outdoor
-Pacific Mall,Shopping,Medium,Indoor
-India Gate,Tourist,High,Outdoor
-Qutub Minar,Tourist,High,Outdoor
-Red Fort,Tourist,High,Outdoor
-Lotus Temple,Tourist,High,Outdoor
-Humayun's Tomb,Tourist,Medium,Outdoor
-Akshardham Temple,Tourist,High,Outdoor
-Lodhi Garden,Tourist,Medium,Outdoor
-Mehrauli Archaeological Park,Tourist,Low,Outdoor
-Hauz Khas Village,Hybrid,Medium,Outdoor
-Khan Market,Hybrid,High,Indoor
-Dilli Haat,Hybrid,Medium,Outdoor
-Cyber Hub Gurugram,Hybrid,High,Indoor
-Ambience Mall,Shopping,High,Indoor
-MGF Metropolitan Mall,Shopping,Medium,Indoor
-Nehru Place,Shopping,Medium,Outdoor
-Chandni Chowk,Shopping,High,Outdoor
-Garden of Five Senses,Tourist,Low,Outdoor
+place_name,category,popularity,area_type,open_hour,close_hour
+Connaught Place,Shopping,High,Outdoor,10,22
+Select Citywalk,Shopping,High,Indoor,11,22
+DLF Mall of India,Shopping,High,Indoor,11,23
+Sarojini Nagar Market,Shopping,High,Outdoor,10,20
+Lajpat Nagar Market,Shopping,Medium,Outdoor,10,20
+Janpath Market,Shopping,Medium,Outdoor,10,20
+Karol Bagh Market,Shopping,High,Outdoor,10,20
+Pacific Mall,Shopping,Medium,Indoor,11,22
+India Gate,Tourist,High,Outdoor,6,23
+Qutub Minar,Tourist,High,Outdoor,7,19
+Red Fort,Tourist,High,Outdoor,9,18
+Lotus Temple,Tourist,High,Outdoor,9,18
+Humayun's Tomb,Tourist,Medium,Outdoor,6,18
+Akshardham Temple,Tourist,High,Outdoor,10,18
+Lodhi Garden,Tourist,Medium,Outdoor,6,20
+Mehrauli Archaeological Park,Tourist,Low,Outdoor,7,19
+Hauz Khas Village,Hybrid,Medium,Outdoor,11,23
+Khan Market,Hybrid,High,Indoor,10,22
+Dilli Haat,Hybrid,Medium,Outdoor,10,22
+Cyber Hub Gurugram,Hybrid,High,Indoor,11,23
+Ambience Mall,Shopping,High,Indoor,11,22
+MGF Metropolitan Mall,Shopping,Medium,Indoor,11,22
+Nehru Place,Shopping,Medium,Outdoor,10,20
+Chandni Chowk,Shopping,High,Outdoor,9,21
+Garden of Five Senses,Tourist,Low,Outdoor,9,19

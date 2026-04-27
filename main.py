@@ -167,6 +167,7 @@ def main():
         print(f"   Category   : {place['category']}")
         print(f"   Popularity : {place['popularity']}")
         print(f"   Area type  : {place['area_type']}")
+        print(f"   Hours      : {int(place['open_hour']):02d}:00 – {int(place['close_hour']):02d}:00")
 
         custom_hour, custom_day = ask_time_preference(now_hour, now_day)
 
@@ -190,7 +191,15 @@ def main():
 
         print(f"\n🕐 Recommendation:")
 
-        if result["type"] == "custom":
+        if result["type"] == "closed":
+            crowd = "High"
+            print(f"   🔒 Place is CLOSED at {result['hour']}:00")
+            print(f"   🕐 Hours : {result['message']}")
+            risk = calculate_risk(aqi, temp, crowd)
+            print(f"   ⚠️  Risk level : {risk}")
+            continue
+
+        elif result["type"] == "custom":
             crowd = result["crowd"]
             print(f"   📌 {result['day']} at {result['hour']}:00  →  {result['slot']}")
             print(f"   👥 Expected crowd : {crowd}")
@@ -206,15 +215,14 @@ def main():
             print(f"   👥 Expected crowd : {crowd}")
 
         else:
-            # another_day — now includes the specific day + slot suggestion
+            # another_day
             crowd = result.get("crowd", "High")
             print(f"   ❌ Today's slots are all crowded.")
             if result.get("day") and result.get("slot"):
-                print(f"   📅 Try instead     →  {result['day']}  {result['slot']}")
-                print(f"   👥 Expected crowd  : {result['crowd']}")
+                print(f"   📅 Try instead    →  {result['day']}  {result['slot']}")
+                print(f"   👥 Expected crowd : {result['crowd']}")
             else:
                 print(f"   📅 Try a weekday morning for the least crowd.")
-            print(f"   👥 Today's crowd   : High (all slots)")
 
         risk = calculate_risk(aqi, temp, crowd)
         print(f"   ⚠️  Risk level     : {risk}")
