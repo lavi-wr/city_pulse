@@ -1,32 +1,93 @@
+"""
+train_model.py
+--------------
+Trains a Decision Tree classifier on clean_crowd_data.csv.
+
+Outputs
+-------
+  models/crowd_model.pkl   – trained classifier (joblib)
+  Console                  – accuracy, classification report, feature importances
+"""
+
+import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import (
+    accuracy_score, classification_report, confusion_matrix
+)
 import joblib
 
-df = pd.read_csv("data/clean_crowd_data.csv")
+DATA_PATH  = "data/clean_crowd_data.csv"
+MODEL_PATH = "models/crowd_model.pkl"
 
-X = df.drop("crowd", axis=1)
-buffer = df["crowd"]
+FEATURE_COLS = ["hour", "day", "place_type", "popularity",
+                "area_type", "peak_hour", "weekend", "temp_level"]
+TARGET_COL   = "crowd"
+LABEL_NAMES  = ["Low", "Medium", "High"]
 
+
+def _header(title):
+    print(f"\n{'─'*55}")
+    print(f"  {title}")
+    print(f"{'─'*55}")
+
+
+# ── Load ──────────────────────────────────────────────────
+_header("Loading data")
+df = pd.read_csv(DATA_PATH)
+print(f"  Shape : {df.shape[0]:,} rows × {df.shape[1]} columns")
+
+X = df[FEATURE_COLS]
+y = df[TARGET_COL]
+
+
+# ── Split ─────────────────────────────────────────────────
+_header("Train / Test split")
 X_train, X_test, y_train, y_test = train_test_split(
-    X, buffer, test_size=0.2, random_state=42
+    X, y, test_size=0.2, random_state=42, stratify=y
 )
+print(f"  Training samples : {len(X_train):,}")
+print(f"  Test samples     : {len(X_test):,}")
 
-model = DecisionTreeClassifier(max_depth=5)
+
+# ── Train ─────────────────────────────────────────────────
+_header("Training Decision Tree (max_depth=5)")
+model = DecisionTreeClassifier(max_depth=5, random_state=42)
 model.fit(X_train, y_train)
+print("  ✅ Training complete")
 
+
+# ── Evaluate ──────────────────────────────────────────────
+_header("Evaluation")
 y_pred = model.predict(X_test)
-
 accuracy = accuracy_score(y_test, y_pred)
 
-print(f"\nModel Accuracy: {accuracy * 100:.2f}%")
+print(f"\n  Accuracy : {accuracy * 100:.2f}%")
 
-import os
+print("\n  Classification Report:")
+print(classification_report(y_test, y_pred, target_names=LABEL_NAMES))
 
+print("  Confusion Matrix (rows=actual, cols=predicted):")
+cm = confusion_matrix(y_test, y_pred)
+cm_df = pd.DataFrame(cm, index=LABEL_NAMES, columns=LABEL_NAMES)
+print(cm_df.to_string())
+
+
+# ── Feature importances ───────────────────────────────────
+_header("Feature Importances")
+importances = sorted(
+    zip(FEATURE_COLS, model.feature_importances_),
+    key=lambda x: x[1], reverse=True
+)
+for feat, imp in importances:
+    bar = "█" * int(imp * 40)
+    print(f"  {feat:<15}: {imp:.4f}  {bar}")
+
+
+# ── Save ──────────────────────────────────────────────────
+_header("Saving model")
 os.makedirs("models", exist_ok=True)
-
-joblib.dump(model, "models/crowd_model.pkl")
-joblib.dump(model, "models/crowd_model.pkl")
-
-print("\nModel saved successfully!")
+joblib.dump(model, MODEL_PATH)
+print(f"  Saved to : {MODEL_PATH}")
+print("\n✅ Training complete!")
