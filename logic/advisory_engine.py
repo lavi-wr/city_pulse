@@ -28,11 +28,10 @@ def final_advice(risk, crowd, aqi, temp, recommendation):
         elif temp < 32:      print("  • Weather is comfortable.")
         print("👉 Perfect time to visit!")
 
-    # Time recommendation tip
     rec_type = recommendation.get("type")
 
     if rec_type == "now":
-        pass   # already implied by the advice above
+        pass   
 
     elif rec_type == "today":
         slot = recommendation.get("slot", "")
@@ -49,4 +48,4 @@ def final_advice(risk, crowd, aqi, temp, recommendation):
             print("\n💡 Try a weekday morning for the least crowd.")
 
     elif rec_type == "custom":
-        pass   # user chose the time deliberately — no extra tip needed
+        pass   

@@ -23,17 +23,11 @@ def next_day(day_str):
     return DAYS[(idx + 1) % 7]
 
 def slot_is_open(start, end, open_hour, close_hour):
-    """
-    A slot is valid only if the place is actually open during it.
-    The slot must overlap meaningfully with open_hour–close_hour.
-    We require at least 1 hour of overlap.
-    """
     overlap_start = max(start, open_hour)
     overlap_end   = min(end,   close_hour)
     return (overlap_end - overlap_start) >= 1
 
 def best_slot_for_day(place, temp, day_str):
-    """Scan all TIME_SLOTS for a given day, return the lowest-crowd open slot."""
     open_hour  = int(place.get("open_hour",  8))
     close_hour = int(place.get("close_hour", 22))
     crowd_priority = {"Low": 1, "Medium": 2, "High": 3}
@@ -55,17 +49,6 @@ def best_slot_for_day(place, temp, day_str):
     return best, best_score
 
 def recommend_time(place, temp, custom_hour=None, custom_day=None):
-    """
-    Recommend the best time slot for a place.
-
-    Parameters
-    ----------
-    place       : place row from places.csv (must have open_hour, close_hour)
-    temp        : float — temperature in °C
-    custom_hour : int, optional — user-specified hour (0-23)
-    custom_day  : str, optional — user-specified day e.g. "Saturday"
-    """
-
     now          = datetime.now()
     current_hour = custom_hour if custom_hour is not None else now.hour
     day_str      = custom_day  if custom_day  is not None else now.strftime("%A")
@@ -73,7 +56,6 @@ def recommend_time(place, temp, custom_hour=None, custom_day=None):
     open_hour    = int(place.get("open_hour",  8))
     close_hour   = int(place.get("close_hour", 22))
 
-    # ── Custom time: predict for that exact hour, but check if place is open ──
     if custom_hour is not None:
         if current_hour < open_hour or current_hour >= close_hour:
             return {
@@ -96,7 +78,6 @@ def recommend_time(place, temp, custom_hour=None, custom_day=None):
 
     crowd_priority = {"Low": 1, "Medium": 2, "High": 3}
 
-    # ── Check the slot we're currently in (if place is open) ─────────────────
     current_slot = get_current_slot(current_hour)
     if current_slot:
         start, end = current_slot
@@ -110,14 +91,13 @@ def recommend_time(place, temp, custom_hour=None, custom_day=None):
                     "crowd": crowd,
                 }
 
-    # ── Scan remaining slots today that are still open ────────────────────────
     best_today  = None
     best_score  = 99
 
     for start, end in TIME_SLOTS:
-        if end <= current_hour:                              # fully in the past
+        if end <= current_hour:                              
             continue
-        if current_slot and start == current_slot[0]:       # already checked
+        if current_slot and start == current_slot[0]:       
             continue
         if not slot_is_open(start, end, open_hour, close_hour):
             continue
@@ -139,7 +119,6 @@ def recommend_time(place, temp, custom_hour=None, custom_day=None):
     if best_today and best_today["crowd"] in ["Low", "Medium"]:
         return best_today
 
-    # ── No good slot today → scan tomorrow then day after ────────────────────
     for days_ahead in [1, 2]:
         target_day = day_str
         for _ in range(days_ahead):

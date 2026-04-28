@@ -1,10 +1,3 @@
-"""
-main.py
--------
-CityPulse — Smart outing advisor for Delhi/NCR.
-Run from the project root:  python main.py
-"""
-
 import sys
 import os
 
@@ -23,8 +16,6 @@ from datetime import datetime
 
 DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
 
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def divider(char="─", width=44):
     print(char * width)
@@ -63,9 +54,6 @@ def show_places(df):
     for i, name in enumerate(df["place_name"].tolist(), 1):
         print(f"   {i:>2}. {name}")
 
-
-# ── Time / Day chooser ────────────────────────────────────────────────────────
-
 def ask_time_preference(now_hour, now_day):
     print("\n⏰ When are you planning to go?")
     print("   1. Right now")
@@ -84,7 +72,6 @@ def _ask_hour(default):
     raw = input(f"\n   Enter hour (0–23)  [press Enter for {default}:00]: ").strip()
     if raw == "":
         return default
-    # Handle formats like "13:00" or "13:30" — take just the hour part
     raw = raw.split(":")[0].strip()
     try:
         h = int(raw)
@@ -116,8 +103,6 @@ def _ask_day(default):
     print(f"   ⚠️  Not recognised. Using {default}.")
     return default
 
-
-# ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
     divider("═")
@@ -215,7 +200,6 @@ def main():
             print(f"   👥 Expected crowd : {crowd}")
 
         else:
-            # another_day
             crowd = result.get("crowd", "High")
             print(f"   ❌ Today's slots are all crowded.")
             if result.get("day") and result.get("slot"):

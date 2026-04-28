@@ -1,16 +1,3 @@
-"""
-eda.py
-------
-Exploratory Data Analysis on raw_crowd_data.csv.
-
-Runs in three stages:
-  1. RAW data stats  – shape, dtypes, null counts, dirty value inventory
-  2. POST-CLEAN stats – distributions, descriptive statistics
-  3. CORRELATION     – feature correlation heatmap + per-class analysis
-
-All charts are saved to  data/eda_plots/  and stats are printed to stdout.
-"""
-
 import pandas as pd
 import numpy as np
 import matplotlib
@@ -20,7 +7,6 @@ import matplotlib.gridspec as gridspec
 import seaborn as sns
 from pathlib import Path
 
-# ── Config ─────────────────────────────────────────────────────────────────────
 
 RAW_PATH   = "data/raw_crowd_data.csv"
 CLEAN_PATH = "data/clean_crowd_data.csv"
@@ -29,11 +15,6 @@ PLOT_DIR.mkdir(parents=True, exist_ok=True)
 
 sns.set_theme(style="whitegrid", palette="muted")
 PALETTE = {"Low": "#2ecc71", "Medium": "#f39c12", "High": "#e74c3c"}
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# SECTION 1 – RAW DATA OVERVIEW
-# ══════════════════════════════════════════════════════════════════════════════
 
 def section1_raw_overview(df_raw):
     print("\n" + "═" * 60)
@@ -65,11 +46,6 @@ def section1_raw_overview(df_raw):
     for label, cnt in vc.items():
         print(f"   {label:<10}: {cnt:>5}  ({cnt/len(df_raw)*100:.1f}%)")
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# SECTION 2 – POST-CLEAN STATISTICS
-# ══════════════════════════════════════════════════════════════════════════════
-
 def section2_clean_stats(df):
     print("\n" + "═" * 60)
     print("  SECTION 2 — POST-CLEAN DESCRIPTIVE STATISTICS")
@@ -95,7 +71,6 @@ def section2_clean_stats(df):
         mn, mx = df[col].min(), df[col].max()
         print(f"   {col:<15}: min={mn}  max={mx}  unique={df[col].nunique()}")
 
-    # How much data survived cleaning
     raw = pd.read_csv(RAW_PATH)
     pct = len(df) / len(raw) * 100
     print(f"\n── Data Retention Rate ─────────────────────────────────────")
@@ -104,17 +79,12 @@ def section2_clean_stats(df):
     print(f"   Retained    : {pct:.1f}%")
     print(f"   Removed     : {len(raw)-len(df):,} rows")
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# SECTION 3 – VISUALISATIONS & CORRELATION
-# ══════════════════════════════════════════════════════════════════════════════
-
 def section3_plots(df):
     print("\n" + "═" * 60)
     print("  SECTION 3 — CORRELATION & FEATURE ANALYSIS")
     print("═" * 60)
 
-    # ── 3a. Correlation matrix ────────────────────────────────────────────────
+    # Correlation matrix 
     num_df = df.select_dtypes(include=[np.number])
     corr   = num_df.corr()
 
@@ -138,7 +108,7 @@ def section3_plots(df):
     plt.close(fig)
     print("\n   📊 Saved: 01_correlation_heatmap.png")
 
-    # ── 3b. Crowd distribution ────────────────────────────────────────────────
+    #  Crowd distribution
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
 
     crowd_labels = {0: "Low", 1: "Medium", 2: "High"}
@@ -163,7 +133,7 @@ def section3_plots(df):
     plt.close(fig)
     print("   📊 Saved: 02_crowd_distribution.png")
 
-    # ── 3c. Crowd by hour ────────────────────────────────────────────────────
+    # Crowd by hour 
     fig, ax = plt.subplots(figsize=(12, 4))
     hour_crowd = df.groupby("hour")["crowd"].mean()
     ax.plot(hour_crowd.index, hour_crowd.values, marker="o", color="#3498db", linewidth=2)
@@ -177,7 +147,7 @@ def section3_plots(df):
     plt.close(fig)
     print("   📊 Saved: 03_crowd_by_hour.png")
 
-    # ── 3d. Crowd by day ─────────────────────────────────────────────────────
+    # Crowd by day
     day_order   = [0, 1, 2, 3, 4, 5, 6]
     day_names   = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     day_crowd   = df.groupby("day")["crowd"].mean().reindex(day_order)
@@ -194,7 +164,7 @@ def section3_plots(df):
     plt.close(fig)
     print("   📊 Saved: 04_crowd_by_day.png")
 
-    # ── 3e. Feature distributions ────────────────────────────────────────────
+    # Feature distributions
     n_cols = len(num_df.columns)
     n_rows = (n_cols + 3) // 4   # ceiling division
     fig, axes = plt.subplots(n_rows, 4, figsize=(16, 4 * n_rows))
@@ -215,7 +185,7 @@ def section3_plots(df):
     plt.close(fig)
     print("   📊 Saved: 05_feature_distributions.png")
 
-    # ── 3f. Pairwise key features vs crowd ────────────────────────────────────
+    #  Pairwise key features vs crowd
     fig, axes = plt.subplots(1, 3, figsize=(14, 4))
 
     # hour vs crowd (boxplot)
@@ -250,16 +220,11 @@ def section3_plots(df):
     plt.close(fig)
     print("   📊 Saved: 06_feature_vs_crowd.png")
 
-    # ── Summary stats per crowd class ─────────────────────────────────────────
     print("\n── Feature Means by Crowd Class ───────────────────────────")
     group_means = df.groupby("crowd")[num_cols].mean().round(3)
     group_means.index = group_means.index.map({0: "Low", 1: "Medium", 2: "High"})
     print(group_means.to_string())
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# MAIN
-# ══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
     df_raw   = pd.read_csv(RAW_PATH)

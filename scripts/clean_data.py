@@ -33,9 +33,7 @@ def _sub(title):
     print(f"\n  ── {title} {'─'*(W-6-len(title))}")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# STEP 1 – Load & audit raw data
-# ══════════════════════════════════════════════════════════════════════════════
+# Load raw data
 
 _header("STEP 1 — RAW DATA OVERVIEW")
 
@@ -60,10 +58,6 @@ for col in df_raw.columns:
 print(f"\n  Raw sample (first 3 rows):")
 print(df_raw.head(3).to_string(index=False))
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# STEP 2 – Fix dirty text columns
-# ══════════════════════════════════════════════════════════════════════════════
 
 _header("STEP 2 — CLEANING TEXT COLUMNS")
 
@@ -90,7 +84,6 @@ for col, aliases in [("day",day_aliases),("place_type",place_aliases),
     before_unique = df[col].dropna().nunique()
     df[col] = df[col].astype(str).str.strip().str.capitalize()
     df[col] = df[col].map(lambda x: aliases.get(x, x))
-    # fill default
     default = {"day":"Monday","place_type":"Shopping",
                "popularity":"Medium","area_type":"Indoor"}[col]
     df[col] = df[col].fillna(default)
@@ -99,13 +92,8 @@ for col, aliases in [("day",day_aliases),("place_type",place_aliases),
           f"| {before_nulls} nulls filled with '{default}'")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# STEP 3 – Fix numeric columns  ← BEFORE vs AFTER stats shown here
-# ══════════════════════════════════════════════════════════════════════════════
-
 _header("STEP 3 — NUMERIC COLUMNS: BEFORE vs AFTER CLEANING")
 
-# Snapshot BEFORE (raw values, nulls still present)
 df_before_num = df.copy()
 df_before_num["hour"]        = pd.to_numeric(df_before_num["hour"], errors="coerce")
 df_before_num["temperature"] = pd.to_numeric(df_before_num["temperature"], errors="coerce")
@@ -113,17 +101,15 @@ df_before_num["temperature"] = pd.to_numeric(df_before_num["temperature"], error
 hour_median = df_before_num["hour"].median()
 temp_mean   = df_before_num["temperature"].mean()
 
-# Apply fixes
 df["hour"]        = df_before_num["hour"].fillna(hour_median).astype(int)
 df["temperature"] = df_before_num["temperature"].fillna(temp_mean).round(1)
 
-# ── Print side-by-side stats ──────────────────────────────────────────────────
 for col, fill_method, fill_val in [
     ("hour",        "median", hour_median),
     ("temperature", "mean",   temp_mean),
 ]:
-    raw_series   = df_before_num[col]       # with NaNs
-    clean_series = df[col].astype(float)    # after fill
+    raw_series   = df_before_num[col]       
+    clean_series = df[col].astype(float)   
 
     _sub(f"{col}  (filled {int(raw_series.isnull().sum())} nulls with {fill_method} = {fill_val:.1f})")
 
@@ -151,11 +137,6 @@ for col, fill_method, fill_val in [
             changed = ""
         print(f"  {stat:<12} {bval:>12.2f}  {aval:>12.2f}  {changed:>10}")
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# STEP 4 – Derive engineered features
-# ══════════════════════════════════════════════════════════════════════════════
-
 _header("STEP 4 — DERIVING ENGINEERED FEATURES")
 
 df["peak_hour"] = df["hour"].apply(lambda h: 1 if h in [17, 18, 19] else 0)
@@ -177,10 +158,6 @@ print(f"  {'peak_hour':<14} {'hour in [17,18,19]':<38} {ph0:>6}  {ph1:>6}  {'—
 print(f"  {'weekend':<14} {'Sat or Sun':<38} {wk0:>6}  {wk1:>6}  {'—':>6}")
 print(f"  {'temp_level':<14} {'<20 Cold / <32 Comfy / ≥32 Hot':<38} {tl0:>6}  {tl1:>6}  {tl2:>6}")
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# STEP 5 – Encode categoricals
-# ══════════════════════════════════════════════════════════════════════════════
 
 _header("STEP 5 — ENCODING CATEGORICAL COLUMNS")
 
@@ -212,11 +189,6 @@ if unmapped.sum() > 0:
 else:
     print(f"\n  ✅ All values encoded cleanly — 0 new nulls")
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# STEP 6 – Final column selection
-# ══════════════════════════════════════════════════════════════════════════════
-
 _header("STEP 6 — FINALISING DATASET")
 
 final_cols = ["hour","day","place_type","popularity",
@@ -224,11 +196,6 @@ final_cols = ["hour","day","place_type","popularity",
 df = df[final_cols]
 print(f"  Kept    : {final_cols}")
 print(f"  Dropped : ['temperature']  → replaced by temp_level (0/1/2)")
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# STEP 7 – Save & final summary
-# ══════════════════════════════════════════════════════════════════════════════
 
 _header("STEP 7 — FINAL SUMMARY")
 
@@ -255,7 +222,6 @@ print(f"\n  Clean sample (first 5 rows):")
 print(df.head().to_string(index=False))
 print(f"\n  Saved → {OUTPUT_PATH}")
 
-# Save encoding maps for feature_builder to load
 os.makedirs("models", exist_ok=True)
 joblib.dump(day_map,   "models/day_map.pkl")
 joblib.dump(place_map, "models/place_map.pkl")
