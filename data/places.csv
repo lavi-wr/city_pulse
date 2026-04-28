@@ -1,0 +1,26 @@
+place_name,category,popularity,area_type
+Connaught Place,Shopping,High,Outdoor
+Select Citywalk,Shopping,High,Indoor
+DLF Mall of India,Shopping,High,Indoor
+Sarojini Nagar Market,Shopping,High,Outdoor
+Lajpat Nagar Market,Shopping,Medium,Outdoor
+Janpath Market,Shopping,Medium,Outdoor
+Karol Bagh Market,Shopping,High,Outdoor
+Pacific Mall,Shopping,Medium,Indoor
+India Gate,Tourist,High,Outdoor
+Qutub Minar,Tourist,High,Outdoor
+Red Fort,Tourist,High,Outdoor
+Lotus Temple,Tourist,High,Outdoor
+Humayun's Tomb,Tourist,Medium,Outdoor
+Akshardham Temple,Tourist,High,Outdoor
+Lodhi Garden,Tourist,Medium,Outdoor
+Mehrauli Archaeological Park,Tourist,Low,Outdoor
+Hauz Khas Village,Hybrid,Medium,Outdoor
+Khan Market,Hybrid,High,Indoor
+Dilli Haat,Hybrid,Medium,Outdoor
+Cyber Hub Gurugram,Hybrid,High,Indoor
+Ambience Mall,Shopping,High,Indoor
+MGF Metropolitan Mall,Shopping,Medium,Indoor
+Nehru Place,Shopping,Medium,Outdoor
+Chandni Chowk,Shopping,High,Outdoor
+Garden of Five Senses,Tourist,Low,Outdoor
