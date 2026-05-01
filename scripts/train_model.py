@@ -1,14 +1,3 @@
-"""
-train_model.py
---------------
-Trains a Decision Tree classifier on clean_crowd_data.csv.
-
-Outputs
--------
-  models/crowd_model.pkl   – trained classifier (joblib)
-  Console                  – accuracy, classification report, feature importances
-"""
-
 import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -32,8 +21,6 @@ def _header(title):
     print(f"  {title}")
     print(f"{'─'*55}")
 
-
-# ── Load ──────────────────────────────────────────────────
 _header("Loading data")
 df = pd.read_csv(DATA_PATH)
 print(f"  Shape : {df.shape[0]:,} rows × {df.shape[1]} columns")
@@ -41,8 +28,6 @@ print(f"  Shape : {df.shape[0]:,} rows × {df.shape[1]} columns")
 X = df[FEATURE_COLS]
 y = df[TARGET_COL]
 
-
-# ── Split ─────────────────────────────────────────────────
 _header("Train / Test split")
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
@@ -50,15 +35,11 @@ X_train, X_test, y_train, y_test = train_test_split(
 print(f"  Training samples : {len(X_train):,}")
 print(f"  Test samples     : {len(X_test):,}")
 
-
-# ── Train ─────────────────────────────────────────────────
-_header("Training Decision Tree (max_depth=5)")
-model = DecisionTreeClassifier(max_depth=5, random_state=42)
+_header("Training Decision Tree (max_depth=8)")
+model = DecisionTreeClassifier(max_depth=8, class_weight="balanced")
 model.fit(X_train, y_train)
 print("  ✅ Training complete")
 
-
-# ── Evaluate ──────────────────────────────────────────────
 _header("Evaluation")
 y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
@@ -73,8 +54,6 @@ cm = confusion_matrix(y_test, y_pred)
 cm_df = pd.DataFrame(cm, index=LABEL_NAMES, columns=LABEL_NAMES)
 print(cm_df.to_string())
 
-
-# ── Feature importances ───────────────────────────────────
 _header("Feature Importances")
 importances = sorted(
     zip(FEATURE_COLS, model.feature_importances_),
@@ -84,8 +63,6 @@ for feat, imp in importances:
     bar = "█" * int(imp * 40)
     print(f"  {feat:<15}: {imp:.4f}  {bar}")
 
-
-# ── Save ──────────────────────────────────────────────────
 _header("Saving model")
 os.makedirs("models", exist_ok=True)
 joblib.dump(model, MODEL_PATH)

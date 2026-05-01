@@ -9,15 +9,6 @@ columns = [
 ]
 
 def predict_crowd(features):
-
     df = pd.DataFrame([features], columns=columns)
-
     prediction = model.predict(df)[0]
-
-    mapping = {
-        0: "Low",
-        1: "Medium",
-        2: "High"
-    }
-
-    return mapping[prediction]
+    return {0: "Low", 1: "Medium", 2: "High"}[prediction]
