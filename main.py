@@ -8,7 +8,11 @@ sys.path.insert(0, os.path.join(ROOT, "logic"))
 
 from api.weather_api import get_weather
 from api.aqi_api import get_aqi
-from api.distance_api import get_distance_km, get_user_location_address   # ← NEW
+from api.distance_api import (          # ← ORS-powered
+    get_distance_km,
+    get_all_modes,
+    get_user_location_address,
+)
 from logic.time_slot_logic import recommend_time
 from logic.advisory_engine import final_advice
 from logic.transport_advisor import recommend_transport, print_transport_advice
@@ -18,7 +22,6 @@ from datetime import datetime
 
 DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
 
-# ── City suffix appended to every place name for better geocoding ─────────────
 CITY_SUFFIX = ", New Delhi, India"
 
 
@@ -105,11 +108,6 @@ def _ask_day(default):
 # ── Location helpers ──────────────────────────────────────────────────────────
 
 def get_user_origin(cached_origin: str | None) -> str:
-    """
-    Returns the user's origin address.
-    Uses cached value if already set; otherwise tries IP-geolocation,
-    then falls back to asking the user.
-    """
     if cached_origin:
         return cached_origin
 
@@ -131,28 +129,29 @@ def _ask_origin_manually() -> str:
 
 # ── Transport helpers ─────────────────────────────────────────────────────────
 
-def fetch_distance(origin: str, place_name: str) -> float | None:
+def fetch_all_distances(origin: str, place_name: str) -> dict | None:
     """
-    Calls the Distance Matrix API and returns km, or None on failure.
-    Appends CITY_SUFFIX to the place name for cleaner geocoding.
+    Calls ORS for driving, walking, and cycling in one go.
+    Returns the ors_modes dict, or None on total failure.
     """
     destination = place_name + CITY_SUFFIX
-    print(f"\n🗺️  Fetching distance: {origin}  →  {place_name}…", end=" ", flush=True)
-    km = get_distance_km(origin, destination, mode="driving")
-    if km is not None:
-        print(f"✅  {km} km")
-    else:
-        print("❌")
-    return km
+    print(f"\n🗺️  Fetching ORS routes (drive / walk / cycle)…", end=" ", flush=True)
+    try:
+        from api.distance_api import get_all_modes
+        modes = get_all_modes(origin, destination)
+        # Check at least driving worked
+        if modes.get("driving", {}).get("distance_km") is not None:
+            print("✅")
+            return modes
+        print("❌ (ORS returned no data)")
+        return None
+    except Exception as e:
+        print(f"❌ ({e})")
+        return None
 
 def ask_transport_preference(
     auto_distance_km: float | None,
 ) -> tuple[float | None, str]:
-    """
-    Asks if the user wants transport suggestions.
-    If auto_distance_km is available it is shown for confirmation;
-    otherwise falls back to manual entry.
-    """
     print("\n🚦 Would you like transport suggestions?")
     print("   1. Yes")
     print("   2. No")
@@ -168,7 +167,7 @@ def ask_transport_preference(
 
 def _confirm_or_override_distance(auto_km: float | None) -> float:
     if auto_km is not None:
-        print(f"\n   📏 Detected distance : {auto_km} km")
+        print(f"\n   📏 Detected distance : {auto_km} km  (via OpenStreetMap)")
         print("   1. Use this distance")
         print("   2. Enter manually")
         while True:
@@ -204,14 +203,12 @@ def _ask_priority() -> str:
         print("   ❌ Please enter 1, 2, or 3.")
 
 def is_raining(aqi: int, temp: float) -> bool:
-    """Simple placeholder — replace with weather['is_raining'] if available."""
     return False
 
 
 # ── Metro display helper ──────────────────────────────────────────────────────
 
 def show_metro_info(place: pd.Series) -> None:
-    """Prints the nearest metro station for the selected place."""
     metro = place.get("nearest_metro", "")
     line  = place.get("metro_line", "")
     if metro and str(metro).strip().lower() not in ("", "unknown", "nan"):
@@ -249,7 +246,6 @@ def main():
 
     show_places(df)
 
-    # ── Ask for user's origin once; reuse across all searches ────────────────
     user_origin: str | None = None
 
     while True:
@@ -274,7 +270,7 @@ def main():
         print(f"   Popularity : {place['popularity']}")
         print(f"   Area type  : {place['area_type']}")
         print(f"   Hours      : {int(place['open_hour']):02d}:00 – {int(place['close_hour']):02d}:00")
-        show_metro_info(place)          # ← NEW: metro station line
+        show_metro_info(place)
 
         custom_hour, custom_day = ask_time_preference(now_hour, now_day)
 
@@ -335,12 +331,18 @@ def main():
 
             final_advice(risk, crowd, aqi, temp, result)
 
-            # ── Transport section ──────────────────────────────────────────
+            # ── Transport section (ORS / OpenStreetMap) ────────────────────
             divider("─")
 
-            # Auto-fetch distance via Google Maps Distance Matrix API
-            user_origin   = get_user_origin(user_origin)
-            auto_distance = fetch_distance(user_origin, place["place_name"])
+            user_origin = get_user_origin(user_origin)
+
+            # Fetch all modes at once from ORS
+            ors_modes = fetch_all_distances(user_origin, place["place_name"])
+
+            # Extract driving distance for the confirmation prompt
+            auto_distance = None
+            if ors_modes:
+                auto_distance = ors_modes.get("driving", {}).get("distance_km")
 
             distance_km, priority = ask_transport_preference(auto_distance)
 
@@ -352,8 +354,9 @@ def main():
                     hour        = display_hour,
                     priority    = priority,
                     raining     = raining,
+                    ors_modes   = ors_modes,    # ← real ORS travel times
                 )
-                print_transport_advice(distance_km, transport_result)
+                print_transport_advice(distance_km, transport_result, ors_modes)
             # ── End transport section ──────────────────────────────────────
 
 

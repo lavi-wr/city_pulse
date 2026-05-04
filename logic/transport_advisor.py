@@ -1,220 +1,181 @@
 """
-transport_advisor.py  –  CityPulse Transportation Module
-=========================================================
-Suggests the best mode of transport (Metro, Bus, Bike) for a given
-distance, crowd level, time-of-day, and user preference.
-
-Score model (lower = better):
-  Each mode gets a composite score from:
-    • cost_score    (₹ per km, normalised 0-1)
-    • time_score    (estimated travel time, normalised 0-1)
-    • comfort_score (fixed penalty per mode, adjusted for crowd & weather)
-  Final = w_cost*cost_score + w_time*time_score + w_comfort*comfort_score
-
-Weights default to balanced (equal thirds) but shift when the caller
-passes priority="price" or priority="time".
+transport_advisor.py  –  ORS-powered transport recommendations
+--------------------------------------------------------------
+Uses real driving / walking / cycling travel times from OpenRouteService
+instead of rule-of-thumb estimates.
 """
 
 from __future__ import annotations
 
-# ── Transport mode definitions ────────────────────────────────────────────────
 
-MODES = {
-    "Metro": {
-        "base_fare":       10,       # ₹  boarding charge
-        "fare_per_km":     2.5,      # ₹ / km
-        "avg_speed_kmh":   35,       # door-to-door including walk + wait
-        "comfort_base":    0.2,      # 0 = best, 1 = worst  (comfort penalty)
-        "crowd_penalty":   0.15,     # added when crowd == High
-        "peak_penalty":    0.10,     # added during peak hours (17-19)
-        "available_after": 6,        # first service hour
-        "available_until": 23,       # last service hour
-        "rain_friendly":   True,
-        "emoji":           "🚇",
-    },
-    "Bus": {
-        "base_fare":       10,
-        "fare_per_km":     1.5,
-        "avg_speed_kmh":   18,
-        "comfort_base":    0.35,
-        "crowd_penalty":   0.20,
-        "peak_penalty":    0.15,
-        "available_after": 5,
-        "available_until": 23,
-        "rain_friendly":   True,
-        "emoji":           "🚌",
-    },
-    "Bike": {
-        "base_fare":       0,
-        "fare_per_km":     0,        # rental ~₹2/min, approximated below
-        "avg_speed_kmh":   15,
-        "comfort_base":    0.25,
-        "crowd_penalty":   0.0,      # bikes dodge traffic
-        "peak_penalty":    0.05,
-        "available_after": 6,
-        "available_until": 22,
-        "rain_friendly":   False,
-        "emoji":           "🚲",
-        "rental_per_min":  2,        # ₹ / minute (e.g. Yulu / Bounce)
-    },
-}
+# ── Cost estimates (INR, approximate Delhi rates) ─────────────────────────────
 
-PEAK_HOURS = {17, 18, 19}
+def _auto_cost(km: float) -> tuple[float, float]:
+    """Returns (min_inr, max_inr) for an auto-rickshaw trip."""
+    base, per_km = 25, 10
+    total = base + km * per_km
+    return round(total * 0.9), round(total * 1.2)      # haggle range
 
 
-# ── Cost helpers ──────────────────────────────────────────────────────────────
-
-def estimate_cost(mode_name: str, distance_km: float) -> float:
-    m = MODES[mode_name]
-    if mode_name == "Bike":
-        minutes = (distance_km / m["avg_speed_kmh"]) * 60
-        return round(m["rental_per_min"] * minutes, 1)
-    return round(m["base_fare"] + m["fare_per_km"] * distance_km, 1)
+def _cab_cost(km: float, hour: int) -> tuple[float, float]:
+    """Ola/Uber estimate with surge for rush hours."""
+    base, per_km = 50, 12
+    surge = 1.4 if hour in range(17, 21) else 1.0
+    mini  = (base + km * per_km) * surge
+    return round(mini), round(mini * 1.3)              # Mini → Prime range
 
 
-def estimate_time(mode_name: str, distance_km: float) -> float:
-    """Returns travel time in minutes."""
-    speed = MODES[mode_name]["avg_speed_kmh"]
-    return round((distance_km / speed) * 60, 1)
+def _metro_cost(km: float) -> int:
+    """Delhi Metro flat-slab fare (approx)."""
+    if km <= 2:   return 10
+    if km <= 5:   return 20
+    if km <= 12:  return 30
+    if km <= 21:  return 40
+    if km <= 32:  return 50
+    return 60
 
 
-# ── Availability check ────────────────────────────────────────────────────────
-
-def is_available(mode_name: str, hour: int, raining: bool = False) -> tuple[bool, str]:
-    m = MODES[mode_name]
-    if hour < m["available_after"] or hour >= m["available_until"]:
-        return False, f"Not running at {hour}:00"
-    if raining and not m["rain_friendly"]:
-        return False, "Not suitable in rain"
-    return True, ""
-
-
-# ── Scoring ───────────────────────────────────────────────────────────────────
-
-def _score_mode(
-    mode_name: str,
-    distance_km: float,
-    crowd: str,
-    hour: int,
-    weights: dict,
-) -> float:
-    m = MODES[mode_name]
-
-    cost = estimate_cost(mode_name, distance_km)
-    time = estimate_time(mode_name, distance_km)
-
-    # Normalise cost (₹0 → ₹200 scale)
-    cost_score = min(cost / 200.0, 1.0)
-
-    # Normalise time (0 → 90 min scale)
-    time_score = min(time / 90.0, 1.0)
-
-    # Comfort
-    comfort = m["comfort_base"]
-    if crowd == "High":
-        comfort += m["crowd_penalty"]
-    if hour in PEAK_HOURS:
-        comfort += m["peak_penalty"]
-    comfort_score = min(comfort, 1.0)
-
-    total = (
-        weights["cost"]    * cost_score
-        + weights["time"]  * time_score
-        + weights["comfort"] * comfort_score
-    )
-    return round(total, 4)
-
-
-def _get_weights(priority: str) -> dict:
-    if priority == "price":
-        return {"cost": 0.60, "time": 0.20, "comfort": 0.20}
-    if priority == "time":
-        return {"cost": 0.20, "time": 0.60, "comfort": 0.20}
-    # balanced (default)
-    return {"cost": 0.34, "time": 0.33, "comfort": 0.33}
-
-
-# ── Public API ────────────────────────────────────────────────────────────────
+# ── Main recommendation logic ─────────────────────────────────────────────────
 
 def recommend_transport(
     distance_km: float,
-    crowd: str       = "Medium",
-    hour: int        = 12,
-    priority: str    = "balanced",
-    raining: bool    = False,
+    crowd: str,
+    hour: int,
+    priority: str = "balanced",
+    raining: bool = False,
+    ors_modes: dict | None = None,   # from distance_api.get_all_modes()
 ) -> dict:
     """
-    Returns a dict with:
-      - ranked   : list of dicts (mode, cost, time_min, score, available, reason)
-      - best     : the top available mode dict
-      - summary  : human-readable string
+    Builds a ranked list of transport options.
+
+    Parameters
+    ----------
+    distance_km  : road distance (driving) in km
+    crowd        : "Low" | "Medium" | "High"
+    hour         : departure hour (0-23)
+    priority     : "balanced" | "price" | "time"
+    raining      : True if it's raining
+    ors_modes    : dict returned by distance_api.get_all_modes()
+                   {mode: {distance_km, duration_min, ...}}
+                   If None, durations are estimated from distance.
+
+    Returns
+    -------
+    dict with keys: options (list of option dicts), best (str)
     """
-    weights = _get_weights(priority)
-    results = []
 
-    for mode_name in MODES:
-        available, unavail_reason = is_available(mode_name, hour, raining)
-        cost     = estimate_cost(mode_name, distance_km)
-        time_min = estimate_time(mode_name, distance_km)
+    # ── Extract real durations where available ────────────────────────────────
+    def dur(mode: str, fallback_min: float) -> float:
+        if ors_modes and mode in ors_modes:
+            val = ors_modes[mode].get("duration_min")
+            if val is not None:
+                return val
+        return fallback_min
 
-        if available:
-            score = _score_mode(mode_name, distance_km, crowd, hour, weights)
-        else:
-            score = 99.0   # push unavailable to bottom
+    drive_min   = dur("driving",  distance_km * 3)    # ~20 km/h city average
+    walk_min    = dur("walking",  distance_km * 13)   # ~4.5 km/h
+    cycle_min   = dur("cycling",  distance_km * 5)    # ~12 km/h
 
-        results.append({
-            "mode":       mode_name,
-            "emoji":      MODES[mode_name]["emoji"],
-            "cost":       cost,
-            "time_min":   time_min,
-            "score":      score,
-            "available":  available,
-            "reason":     unavail_reason,
+    rush_hour   = hour in range(17, 21) or hour in range(8, 11)
+    metro_ok    = distance_km >= 2      # metro is practical above 2 km
+    walk_ok     = distance_km <= 1.5 and not raining
+    cycle_ok    = distance_km <= 8  and not raining and crowd != "High"
+
+    options = []
+
+    # ── Walking ───────────────────────────────────────────────────────────────
+    if walk_ok:
+        options.append({
+            "mode":    "🚶 Walk",
+            "time":    round(walk_min),
+            "cost":    "₹0",
+            "eco":     True,
+            "summary": "Free & healthy for short distances",
+            "score":   {"balanced": 80, "price": 100, "time": 20}[priority],
         })
 
-    results.sort(key=lambda x: x["score"])
+    # ── Metro ─────────────────────────────────────────────────────────────────
+    if metro_ok:
+        fare   = _metro_cost(distance_km)
+        # Rough metro time: 5 min walk + 3 min wait + line time
+        m_time = 5 + 3 + round(distance_km * 2.5)
+        note   = "Avoid rush hours (8-10 AM, 5-8 PM)" if rush_hour else "Good option right now"
+        options.append({
+            "mode":    "🚇 Metro",
+            "time":    m_time,
+            "cost":    f"₹{fare}",
+            "eco":     True,
+            "summary": note,
+            "score":   {"balanced": 85, "price": 90, "time": 60}[priority],
+        })
 
-    available_modes = [r for r in results if r["available"]]
-    best = available_modes[0] if available_modes else None
+    # ── Cycling ───────────────────────────────────────────────────────────────
+    if cycle_ok:
+        options.append({
+            "mode":    "🚲 Cycle / E-scooter",
+            "time":    round(cycle_min),
+            "cost":    "₹10–30",
+            "eco":     True,
+            "summary": "Eco-friendly; check Yulu/Bounce availability",
+            "score":   {"balanced": 75, "price": 95, "time": 50}[priority],
+        })
 
-    return {
-        "ranked": results,
-        "best":   best,
-        "priority": priority,
-    }
+    # ── Auto-rickshaw ─────────────────────────────────────────────────────────
+    if distance_km <= 15:
+        lo, hi = _auto_cost(distance_km)
+        options.append({
+            "mode":    "🛺 Auto-rickshaw",
+            "time":    round(drive_min * 1.1),
+            "cost":    f"₹{lo}–{hi}",
+            "eco":     False,
+            "summary": "Haggle or use Ola Auto / Rapido",
+            "score":   {"balanced": 70, "price": 75, "time": 55}[priority],
+        })
+
+    # ── Cab (Ola/Uber) ────────────────────────────────────────────────────────
+    lo, hi = _cab_cost(distance_km, hour)
+    cab_note = "Surge pricing likely now" if rush_hour else "Good time for a cab"
+    options.append({
+        "mode":    "🚖 Cab (Ola/Uber)",
+        "time":    round(drive_min),
+        "cost":    f"₹{lo}–{hi}",
+        "eco":     False,
+        "summary": cab_note,
+        "score":   {"balanced": 60, "price": 30, "time": 90}[priority],
+    })
+
+    # ── Bus ───────────────────────────────────────────────────────────────────
+    if distance_km >= 3:
+        bus_time = round(drive_min * 1.5)
+        options.append({
+            "mode":    "🚌 DTC Bus",
+            "time":    bus_time,
+            "cost":    "₹10–25",
+            "eco":     True,
+            "summary": "Very cheap; use Google Maps for routes",
+            "score":   {"balanced": 65, "price": 98, "time": 10}[priority],
+        })
+
+    # ── Sort by priority score (desc) ─────────────────────────────────────────
+    options.sort(key=lambda x: x["score"], reverse=True)
+
+    best = options[0]["mode"] if options else "Unknown"
+    return {"options": options, "best": best}
 
 
-# ── Pretty printer ────────────────────────────────────────────────────────────
+# ── Display helper ────────────────────────────────────────────────────────────
 
-def print_transport_advice(distance_km: float, result: dict) -> None:
-    ranked   = result["ranked"]
-    best     = result["best"]
-    priority = result["priority"]
+def print_transport_advice(distance_km: float, result: dict, ors_modes: dict | None = None) -> None:
+    print(f"\n🚦 Transport Options  (distance: {distance_km} km)")
 
-    priority_label = {
-        "price":    "cheapest",
-        "time":     "fastest",
-        "balanced": "balanced (cost + time)",
-    }.get(priority, priority)
+    if ors_modes:
+        print("   📡 Travel times via OpenRouteService (OpenStreetMap)")
 
-    print("\n=== TRANSPORT ADVISORY ===")
-    print(f"   📏 Distance  : ~{distance_km} km")
-    print(f"   🎯 Priority  : {priority_label}")
-    print()
+    print(f"   ⭐ Best pick: {result['best']}\n")
 
-    for r in ranked:
-        mode  = r["mode"]
-        emoji = r["emoji"]
-        if r["available"]:
-            tag = "⭐ BEST" if r == best else "     "
-            print(f"  {tag}  {emoji} {mode:<6}  ₹{r['cost']:<6.0f}  ~{r['time_min']:.0f} min")
-        else:
-            print(f"         {emoji} {mode:<6}  ❌ {r['reason']}")
-
-    if best:
-        b = best
-        print(f"\n👉 Recommended: {b['emoji']} {b['mode']}")
-        print(f"   Cost  : ₹{b['cost']:.0f}")
-        print(f"   Time  : ~{b['time_min']:.0f} minutes")
-    else:
-        print("\n⚠️  No transport modes available right now.")
+    for opt in result["options"]:
+        eco = " 🌿" if opt["eco"] else ""
+        print(f"   {opt['mode']}{eco}")
+        print(f"      ⏱  ~{opt['time']} min   💰 {opt['cost']}")
+        print(f"      ℹ️  {opt['summary']}")
+        print()
