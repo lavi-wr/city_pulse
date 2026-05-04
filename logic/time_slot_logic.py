@@ -27,6 +27,10 @@ def slot_is_open(start, end, open_hour, close_hour):
     overlap_end   = min(end,   close_hour)
     return (overlap_end - overlap_start) >= 1
 
+def is_place_closed(hour, open_hour, close_hour):
+    """Returns True if the place is closed at this hour."""
+    return hour < open_hour or hour >= close_hour
+
 def best_slot_for_day(place, temp, day_str):
     open_hour  = int(place.get("open_hour",  8))
     close_hour = int(place.get("close_hour", 22))
@@ -56,14 +60,17 @@ def recommend_time(place, temp, custom_hour=None, custom_day=None):
     open_hour    = int(place.get("open_hour",  8))
     close_hour   = int(place.get("close_hour", 22))
 
+    # ── ALWAYS check closed first, regardless of custom or right-now ──────────
+    if is_place_closed(current_hour, open_hour, close_hour):
+        return {
+            "type":    "closed",
+            "hour":    current_hour,
+            "day":     day_str,
+            "message": f"Opens {open_hour}:00 – closes {close_hour}:00.",
+        }
+
+    # ── Custom time: just evaluate that specific hour ─────────────────────────
     if custom_hour is not None:
-        if current_hour < open_hour or current_hour >= close_hour:
-            return {
-                "type":    "closed",
-                "hour":    current_hour,
-                "day":     day_str,
-                "message": f"Closed at {current_hour}:00. Opens {open_hour}:00 – closes {close_hour}:00.",
-            }
         features   = build_features(place, temp, hour=current_hour, day_str=day_str)
         crowd      = predict_crowd(features)
         slot       = get_current_slot(current_hour)
@@ -76,6 +83,7 @@ def recommend_time(place, temp, custom_hour=None, custom_day=None):
             "day":   day_str,
         }
 
+    # ── Right now: check current slot first ───────────────────────────────────
     crowd_priority = {"Low": 1, "Medium": 2, "High": 3}
 
     current_slot = get_current_slot(current_hour)
@@ -91,13 +99,14 @@ def recommend_time(place, temp, custom_hour=None, custom_day=None):
                     "crowd": crowd,
                 }
 
-    best_today  = None
-    best_score  = 99
+    # ── Look for a better slot later today ───────────────────────────────────
+    best_today = None
+    best_score = 99
 
     for start, end in TIME_SLOTS:
-        if end <= current_hour:                              
+        if end <= current_hour:
             continue
-        if current_slot and start == current_slot[0]:       
+        if current_slot and start == current_slot[0]:
             continue
         if not slot_is_open(start, end, open_hour, close_hour):
             continue
@@ -119,6 +128,7 @@ def recommend_time(place, temp, custom_hour=None, custom_day=None):
     if best_today and best_today["crowd"] in ["Low", "Medium"]:
         return best_today
 
+    # ── Look at next 2 days ───────────────────────────────────────────────────
     for days_ahead in [1, 2]:
         target_day = day_str
         for _ in range(days_ahead):

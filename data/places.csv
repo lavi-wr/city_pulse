@@ -1,26 +1,26 @@
-place_name,category,popularity,area_type,open_hour,close_hour
-Connaught Place,Shopping,High,Outdoor,10,22
-Select Citywalk,Shopping,High,Indoor,11,22
-DLF Mall of India,Shopping,High,Indoor,11,23
-Sarojini Nagar Market,Shopping,High,Outdoor,10,20
-Lajpat Nagar Market,Shopping,Medium,Outdoor,10,20
-Janpath Market,Shopping,Medium,Outdoor,10,20
-Karol Bagh Market,Shopping,High,Outdoor,10,20
-Pacific Mall,Shopping,Medium,Indoor,11,22
-India Gate,Tourist,High,Outdoor,6,23
-Qutub Minar,Tourist,High,Outdoor,7,19
-Red Fort,Tourist,High,Outdoor,9,18
-Lotus Temple,Tourist,High,Outdoor,9,18
-Humayun's Tomb,Tourist,Medium,Outdoor,6,18
-Akshardham Temple,Tourist,High,Outdoor,10,18
-Lodhi Garden,Tourist,Medium,Outdoor,6,20
-Mehrauli Archaeological Park,Tourist,Low,Outdoor,7,19
-Hauz Khas Village,Hybrid,Medium,Outdoor,11,23
-Khan Market,Hybrid,High,Indoor,10,22
-Dilli Haat,Hybrid,Medium,Outdoor,10,22
-Cyber Hub Gurugram,Hybrid,High,Indoor,11,23
-Ambience Mall,Shopping,High,Indoor,11,22
-MGF Metropolitan Mall,Shopping,Medium,Indoor,11,22
-Nehru Place,Shopping,Medium,Outdoor,10,20
-Chandni Chowk,Shopping,High,Outdoor,9,21
-Garden of Five Senses,Tourist,Low,Outdoor,9,19
+place_name,category,popularity,area_type,open_hour,close_hour,nearest_metro,metro_line
+Connaught Place,Shopping,High,Outdoor,10,22,Rajiv Chowk,Blue/Yellow Line
+Select Citywalk,Shopping,High,Indoor,11,22,Malviya Nagar,Yellow Line
+DLF Mall of India,Shopping,High,Indoor,11,23,Sector 18 Noida,Blue Line
+Sarojini Nagar Market,Shopping,High,Outdoor,10,20,INA,Yellow Line
+Lajpat Nagar Market,Shopping,Medium,Outdoor,10,20,Lajpat Nagar,Pink Line
+Janpath Market,Shopping,Medium,Outdoor,10,20,Rajiv Chowk,Blue/Yellow Line
+Karol Bagh Market,Shopping,High,Outdoor,10,20,Karol Bagh,Blue Line
+Pacific Mall,Shopping,Medium,Indoor,11,22,Kaushambi,Blue Line
+India Gate,Tourist,High,Outdoor,6,23,Central Secretariat,Yellow/Violet Line
+Qutub Minar,Tourist,High,Outdoor,7,19,Qutub Minar,Yellow Line
+Red Fort,Tourist,High,Outdoor,9,18,Lal Quila,Violet Line
+Lotus Temple,Tourist,High,Outdoor,9,18,Kalkaji Mandir,Violet/Pink Line
+Humayun's Tomb,Tourist,Medium,Outdoor,6,18,JLN Stadium,Violet Line
+Akshardham Temple,Tourist,High,Outdoor,10,18,Akshardham,Blue Line
+Lodhi Garden,Tourist,Medium,Outdoor,6,20,Jor Bagh,Yellow Line
+Mehrauli Archaeological Park,Tourist,Low,Outdoor,7,19,Qutub Minar,Yellow Line
+Hauz Khas Village,Hybrid,Medium,Outdoor,11,23,Hauz Khas,Yellow/Magenta Line
+Khan Market,Hybrid,High,Indoor,10,22,Khan Market,Violet Line
+Dilli Haat,Hybrid,Medium,Outdoor,10,22,INA,Yellow Line
+Cyber Hub Gurugram,Hybrid,High,Indoor,11,23,Cyber City (Rapid Metro),Rapid Metro
+Ambience Mall,Shopping,High,Indoor,11,22,Ambience Mall (Rapid),Rapid Metro
+MGF Metropolitan Mall,Shopping,Medium,Indoor,11,22,Sikanderpur,Yellow Line
+Nehru Place,Shopping,Medium,Outdoor,10,20,Nehru Place,Violet Line
+Chandni Chowk,Shopping,High,Outdoor,9,21,Chandni Chowk,Yellow Line
+Garden of Five Senses,Tourist,Low,Outdoor,9,19,Saket,Yellow Line
