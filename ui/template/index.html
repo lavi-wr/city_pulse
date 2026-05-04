@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CityPulse — Delhi NCR Outing Advisor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f6f5f1;
+  --surface:  #ffffff;
+  --border:   #e8e4dc;
+  --text:     #1a1814;
+  --muted:    #7a7368;
+  --accent:   #1a6b4a;
+  --green:    #22c55e;
+  --amber:    #f59e0b;
+  --red:      #ef4444;
+  --purple:   #7c3aed;
+  --blue:     #3b82f6;
+  --radius:   12px;
+  --shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── Layout ─────────────────────────────────────────── */
+.shell {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  grid-template-rows: 64px 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Top bar ────────────────────────────────────────── */
+.topbar {
+  grid-column: 1 / -1;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-dot {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 14px; font-weight: 600;
+}
+
+.brand-name {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.brand-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.topbar-live {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.live-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 13px;
+}
+
+.live-chip .label { color: var(--muted); font-size: 11px; }
+.live-chip .value { font-weight: 600; font-size: 14px; }
+
+.live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+#time-chip { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--muted); }
+
+/* ── Sidebar ────────────────────────────────────────── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sidebar-header h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 10px;
+}
+
+.search-box {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.search-box:focus { border-color: var(--accent); }
+
+.filter-row {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.filter-tag {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.12s;
+}
+.filter-tag:hover { background: var(--bg); }
+.filter-tag.active-shopping { background: #dcfce7; color: #15803d; border-color: #86efac; }
+.filter-tag.active-tourist  { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
+.filter-tag.active-hybrid   { background: #fef9c3; color: #a16207; border-color: #fde047; }
+
+.place-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px 0;
+}
+
+.place-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all 0.12s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.place-item:hover { background: var(--bg); }
+.place-item.selected {
+  border-left-color: var(--accent);
+  background: #f0faf5;
+}
+.place-item.hidden { display: none; }
+
+.place-item .pn {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--text);
+}
+.place-item .pm {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.tag {
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+.tag-shopping { background: #dcfce7; color: #15803d; }
+.tag-tourist  { background: #dbeafe; color: #1d4ed8; }
+.tag-hybrid   { background: #fef9c3; color: #a16207; }
+.tag-indoor   { background: #ede9fe; color: #5b21b6; }
+.tag-outdoor  { background: #ffedd5; color: #c2410c; }
+.tag-high     { background: #fee2e2; color: #991b1b; }
+.tag-medium   { background: #fef9c3; color: #92400e; }
+.tag-low      { background: #dcfce7; color: #14532d; }
+
+/* ── Main panel ─────────────────────────────────────── */
+.main {
+  overflow-y: auto;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Empty state */
+.empty-state {
+  margin: auto;
+  text-align: center;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.empty-icon {
+  width: 64px; height: 64px;
+  background: var(--bg);
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+}
+.empty-state h2 { font-size: 16px; font-weight: 500; color: var(--text); }
+.empty-state p  { font-size: 13px; max-width: 240px; line-height: 1.6; }
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.card-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 14px;
+}
+
+/* Place header card */
+.place-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.place-header-left h2 {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.place-meta-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.hours-badge {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.open-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 10px;
+}
+.open-pill.open   { background: #dcfce7; color: #15803d; }
+.open-pill.closed { background: #fee2e2; color: #991b1b; }
+
+/* Time selector card */
+.time-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+select, input[type="number"] {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a7368' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+}
+select:focus, input[type="number"]:focus { border-color: var(--accent); }
+input[type="number"] { background-image: none; }
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.check-row input[type="checkbox"] {
+  width: 16px; height: 16px;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+.check-row label {
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.check-btn {
+  width: 100%;
+  padding: 11px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.check-btn:hover   { opacity: 0.9; }
+.check-btn:active  { transform: scale(0.98); }
+.check-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Result card */
+.result-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.metric {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.metric .m-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.metric .m-value { font-size: 20px; font-weight: 700; line-height: 1; }
+.metric .m-sub   { font-size: 11px; color: var(--muted); }
+
+.slot-banner {
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.slot-banner .sb-left  { font-size: 13px; font-weight: 500; }
+.slot-banner .sb-slot  { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 600; }
+.slot-banner.type-now       { background: #f0fdf4; border: 1px solid #86efac; }
+.slot-banner.type-today     { background: #fefce8; border: 1px solid #fde047; }
+.slot-banner.type-custom    { background: #eff6ff; border: 1px solid #93c5fd; }
+.slot-banner.type-another   { background: #fff7ed; border: 1px solid #fdba74; }
+.slot-banner.type-closed    { background: #fef2f2; border: 1px solid #fca5a5; }
+
+/* Advisory */
+.advice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.advice-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.advice-icon {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.advice-line.success .advice-icon { background: #dcfce7; color: #15803d; }
+.advice-line.danger  .advice-icon { background: #fee2e2; color: #991b1b; }
+.advice-line.warn    .advice-icon { background: #fef9c3; color: #92400e; }
+.advice-line.info    .advice-icon { background: #dbeafe; color: #1d4ed8; }
+.advice-line.tip     .advice-icon { background: #ede9fe; color: #5b21b6; }
+
+/* Loading spinner */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* Risk colours */
+.risk-low      { color: #15803d; }
+.risk-moderate { color: #a16207; }
+.risk-high     { color: #991b1b; }
+
+.crowd-low    { color: #15803d; }
+.crowd-medium { color: #a16207; }
+.crowd-high   { color: #991b1b; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-dot">CP</div>
+      <div>
+        <div class="brand-name">CityPulse</div>
+        <div class="brand-sub">Delhi NCR Outing Advisor</div>
+      </div>
+    </div>
+    <div class="topbar-live">
+      <div class="live-chip">
+        <div class="live-dot"></div>
+        <span class="label">Temp</span>
+        <span class="value" id="live-temp">—</span>
+      </div>
+      <div class="live-chip">
+        <span class="label">AQI</span>
+        <span class="value" id="live-aqi">—</span>
+        <span id="live-aqi-label" style="font-size:11px;"></span>
+      </div>
+      <div id="time-chip">—</div>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h3>25 Places</h3>
+      <input class="search-box" type="text" placeholder="Search places..." id="search-input">
+      <div class="filter-row">
+        <button class="filter-tag" data-cat="all">All</button>
+        <button class="filter-tag" data-cat="Shopping">Shopping</button>
+        <button class="filter-tag" data-cat="Tourist">Tourist</button>
+        <button class="filter-tag" data-cat="Hybrid">Hybrid</button>
+        <button class="filter-tag" data-cat="Indoor">Indoor</button>
+        <button class="filter-tag" data-cat="Outdoor">Outdoor</button>
+      </div>
+    </div>
+    <div class="place-list" id="place-list">
+      {% for p in places %}
+      <div class="place-item"
+           data-name="{{ p.place_name }}"
+           data-cat="{{ p.category }}"
+           data-area="{{ p.area_type }}">
+        <div class="pn">{{ p.place_name }}</div>
+        <div class="pm">
+          <span class="tag tag-{{ p.category | lower }}">{{ p.category }}</span>
+          <span class="tag tag-{{ p.area_type | lower }}">{{ p.area_type }}</span>
+          <span class="tag tag-{{ p.popularity | lower }}">{{ p.popularity }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <!-- Main panel -->
+  <main class="main" id="main-panel">
+
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">🗺️</div>
+      <h2>Select a place to start</h2>
+      <p>Pick any of the 25 Delhi NCR locations from the sidebar to check crowd, weather, and best visit time.</p>
+    </div>
+
+    <!-- Place header (hidden until selected) -->
+    <div class="card" id="card-place" style="display:none;">
+      <div class="place-header">
+        <div class="place-header-left">
+          <h2 id="ph-name"></h2>
+          <div class="place-meta-row" id="ph-tags"></div>
+          <div class="hours-badge">
+            <span id="ph-open-pill" class="open-pill"></span>
+            <span id="ph-hours"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Time selector (hidden until selected) -->
+    <div class="card" id="card-time" style="display:none;">
+      <div class="card-title">When do you want to go?</div>
+
+      <div class="check-row">
+        <input type="checkbox" id="use-now" checked>
+        <label for="use-now">Right now</label>
+      </div>
+
+      <div class="time-grid" id="custom-time-grid" style="opacity:0.35;pointer-events:none;">
+        <div class="field">
+          <label>Day</label>
+          <select id="sel-day">
+            {% for d in days %}
+            <option value="{{ d }}">{{ d }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Hour (0 – 23)</label>
+          <input type="number" id="sel-hour" min="0" max="23" placeholder="e.g. 14">
+        </div>
+      </div>
+
+      <button class="check-btn" id="check-btn">Check this place</button>
+    </div>
+
+    <!-- Result (hidden until check is run) -->
+    <div class="card" id="card-result" style="display:none;">
+      <div class="card-title">Prediction</div>
+
+      <div class="slot-banner" id="slot-banner">
+        <div>
+          <div class="sb-left" id="slot-type-label"></div>
+          <div class="sb-slot" id="slot-value"></div>
+        </div>
+        <div id="slot-day-label" style="font-size:12px;color:var(--muted);text-align:right;"></div>
+      </div>
+
+      <div class="result-row">
+        <div class="metric">
+          <div class="m-label">Crowd</div>
+          <div class="m-value" id="res-crowd"></div>
+          <div class="m-sub">expected</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Risk</div>
+          <div class="m-value" id="res-risk"></div>
+          <div class="m-sub">overall</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">AQI</div>
+          <div class="m-value" id="res-aqi"></div>
+          <div class="m-sub" id="res-aqi-label"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Advisory (hidden until check is run) -->
+    <div class="card" id="card-advice" style="display:none;">
+      <div class="card-title">Advisory</div>
+      <div class="advice-list" id="advice-list"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const ADVICE_ICONS = { success:"✓", danger:"✕", warn:"!", info:"i", tip:"→" };
+
+let liveTemp = 30, liveAqi = 100, liveDay = "", liveHour = 0;
+let selectedPlace = null;
+
+// ── Live data ─────────────────────────────────────────
+
+async function loadLive() {
+  try {
+    const r = await fetch("/api/live");
+    const d = await r.json();
+    liveTemp = d.temp; liveAqi = d.aqi;
+    liveDay  = d.day;  liveHour = d.hour;
+    document.getElementById("live-temp").textContent  = d.temp + "°C";
+    document.getElementById("live-aqi").textContent   = d.aqi;
+    document.getElementById("live-aqi-label").textContent = d.aqi_label;
+    document.getElementById("live-aqi-label").style.color = d.aqi_color;
+    document.getElementById("time-chip").textContent  = d.day + "  " + d.time;
+
+    // Pre-select current day in dropdown
+    const sel = document.getElementById("sel-day");
+    for (let opt of sel.options) {
+      if (opt.value === d.day) { opt.selected = true; break; }
+    }
+    document.getElementById("sel-hour").placeholder = `e.g. ${d.hour} (now)`;
+  } catch(e) {
+    document.getElementById("time-chip").textContent = "Live data unavailable";
+  }
+}
+
+// Refresh every 5 minutes
+loadLive();
+setInterval(loadLive, 300000);
+
+// ── Sidebar — search + filter ────────────────────────
+
+let activeFilter = "all";
+
+document.getElementById("search-input").addEventListener("input", e => {
+  applyFilters(e.target.value.toLowerCase());
+});
+
+document.querySelectorAll(".filter-tag").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-tag").forEach(b => {
+      b.className = "filter-tag";
+    });
+    const cat = btn.dataset.cat;
+    if (cat !== "all") {
+      btn.classList.add("active-" + cat.toLowerCase());
+    }
+    activeFilter = cat;
+    applyFilters(document.getElementById("search-input").value.toLowerCase());
+  });
+});
+
+function applyFilters(query) {
+  document.querySelectorAll(".place-item").forEach(item => {
+    const name = item.dataset.name.toLowerCase();
+    const cat  = item.dataset.cat;
+    const area = item.dataset.area;
+
+    const matchSearch = !query || name.includes(query);
+    const matchFilter = activeFilter === "all"
+      || cat === activeFilter || area === activeFilter;
+
+    item.classList.toggle("hidden", !(matchSearch && matchFilter));
+  });
+}
+
+// ── Place selection ──────────────────────────────────
+
+document.querySelectorAll(".place-item").forEach(item => {
+  item.addEventListener("click", () => {
+    document.querySelectorAll(".place-item").forEach(i => i.classList.remove("selected"));
+    item.classList.add("selected");
+    selectedPlace = item.dataset.name;
+    showPlaceHeader(item);
+    document.getElementById("card-result").style.display = "none";
+    document.getElementById("card-advice").style.display = "none";
+  });
+});
+
+function showPlaceHeader(item) {
+  document.getElementById("empty-state").style.display = "none";
+  document.getElementById("card-place").style.display  = "block";
+  document.getElementById("card-time").style.display   = "block";
+
+  const name = item.dataset.name;
+  document.getElementById("ph-name").textContent = name;
+
+  const tags = item.querySelector(".pm").innerHTML;
+  document.getElementById("ph-tags").innerHTML = tags;
+
+  // Hours and open status — get from the place-item's text (we re-fetch from server)
+  // Just show hours from data attribute (we'll update after API call)
+  const hourEl = document.getElementById("sel-hour");
+  hourEl.value = "";
+}
+
+// ── Custom time toggle ───────────────────────────────
+
+document.getElementById("use-now").addEventListener("change", function() {
+  const grid = document.getElementById("custom-time-grid");
+  if (this.checked) {
+    grid.style.opacity = "0.35";
+    grid.style.pointerEvents = "none";
+  } else {
+    grid.style.opacity = "1";
+    grid.style.pointerEvents = "auto";
+  }
+});
+
+// ── Check button ─────────────────────────────────────
+
+document.getElementById("check-btn").addEventListener("click", async () => {
+  if (!selectedPlace) return;
+
+  const btn     = document.getElementById("check-btn");
+  const useNow  = document.getElementById("use-now").checked;
+  const selDay  = document.getElementById("sel-day").value;
+  const selHour = document.getElementById("sel-hour").value;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  const body = {
+    place_name:  selectedPlace,
+    temp:        liveTemp,
+    aqi:         liveAqi,
+    custom_hour: useNow ? null : (selHour !== "" ? parseInt(selHour) : null),
+    custom_day:  useNow ? null : selDay,
+  };
+
+  try {
+    const r = await fetch("/api/recommend", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (d.error) { alert(d.error); return; }
+    renderResult(d);
+  } catch(e) {
+    alert("Could not reach server. Is app.py running?");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Check this place";
+  }
+});
+
+// ── Render result ────────────────────────────────────
+
+function renderResult(d) {
+  const result = d.result;
+  const type   = result.type;
+
+  // Slot banner
+  const banner    = document.getElementById("slot-banner");
+  const typeLabel = document.getElementById("slot-type-label");
+  const slotVal   = document.getElementById("slot-value");
+  const dayLabel  = document.getElementById("slot-day-label");
+
+  banner.className = "slot-banner";
+  if (type === "now") {
+    banner.classList.add("type-now");
+    typeLabel.textContent = "✓  Good to go right now";
+    slotVal.textContent   = result.slot;
+    dayLabel.textContent  = "";
+  } else if (type === "today") {
+    banner.classList.add("type-today");
+    typeLabel.textContent = "⏳  Better later today";
+    slotVal.textContent   = result.slot;
+    dayLabel.textContent  = "";
+  } else if (type === "custom") {
+    banner.classList.add("type-custom");
+    typeLabel.textContent = result.day + " at " + result.hour + ":00";
+    slotVal.textContent   = result.slot;
+    dayLabel.textContent  = "";
+  } else if (type === "closed") {
+    banner.classList.add("type-closed");
+    typeLabel.textContent = "🔒  Place is closed";
+    slotVal.textContent   = result.message;
+    dayLabel.textContent  = "";
+  } else {
+    banner.classList.add("type-another");
+    typeLabel.textContent = "📅  Try another time";
+    slotVal.textContent   = result.slot || "No good slot found";
+    dayLabel.textContent  = result.day  || "";
+  }
+
+  // Metrics
+  const crowd = d.crowd;
+  const risk  = d.risk;
+
+  const crowdEl = document.getElementById("res-crowd");
+  crowdEl.textContent = crowd;
+  crowdEl.className   = "m-value crowd-" + crowd.toLowerCase();
+
+  const riskEl = document.getElementById("res-risk");
+  riskEl.textContent = risk;
+  riskEl.className   = "m-value risk-" + risk.toLowerCase();
+
+  document.getElementById("res-aqi").textContent       = liveAqi;
+  document.getElementById("res-aqi-label").textContent = document.getElementById("live-aqi-label").textContent;
+
+  // Advisory
+  const adviceList = document.getElementById("advice-list");
+  adviceList.innerHTML = "";
+  d.advice.forEach(([kind, text]) => {
+    const div  = document.createElement("div");
+    div.className = "advice-line " + kind;
+    div.innerHTML = `
+      <div class="advice-icon">${ADVICE_ICONS[kind] || "·"}</div>
+      <div>${text}</div>`;
+    adviceList.appendChild(div);
+  });
+
+  // Place hours
+  const place = d.place;
+  const now   = new Date();
+  const h     = now.getHours();
+  const isOpen = h >= place.open_hour && h < place.close_hour;
+  const pillEl = document.getElementById("ph-open-pill");
+  pillEl.textContent = isOpen ? "Open now" : "Closed now";
+  pillEl.className   = "open-pill " + (isOpen ? "open" : "closed");
+  document.getElementById("ph-hours").textContent =
+    String(place.open_hour).padStart(2,"0") + ":00 – " +
+    String(place.close_hour).padStart(2,"0") + ":00";
+
+  document.getElementById("card-result").style.display = "block";
+  document.getElementById("card-advice").style.display = "block";
+  document.getElementById("card-result").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+</script>
+</body>
+</html>
